@@ -82,13 +82,13 @@ class ESNCell(Node, Observable):
         self.register_buffer('hidden', self._init_hidden())
 
         # Initialize input weights
-        self.register_buffer('w_in', Variable(w_in, requires_grad=False))
+        self.w_in = torch.nn.parameter.Parameter(w_in, requires_grad=True)
 
         # Initialize reservoir weights randomly
-        self.register_buffer('w', Variable(w, requires_grad=False))
+        self.w = torch.nn.parameter.Parameter(w, requires_grad=True)
 
         # Initialize bias
-        self.register_buffer('w_bias', Variable(w_bias, requires_grad=False))
+        self.w_bias = torch.nn.parameter.Parameter(w_bias, requires_grad=True)
 
         # Add observation point
         self.add_observation_point("w", unique=True)
