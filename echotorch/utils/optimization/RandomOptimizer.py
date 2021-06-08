@@ -22,6 +22,7 @@
 # Imports
 import random
 import numpy as np
+import tqdm
 from .Optimizer import Optimizer
 from .OptimizerFactory import optimizer_factory
 
@@ -70,7 +71,7 @@ class RandomOptimizer(Optimizer):
         R = self.get_parameter('R')
 
         # For each individual
-        for r in range(R):
+        for r in tqdm.tqdm(range(R)):
             # Individual : a list of parameter values
             individual = dict()
 
