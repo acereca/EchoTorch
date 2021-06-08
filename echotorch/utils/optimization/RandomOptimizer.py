@@ -71,7 +71,8 @@ class RandomOptimizer(Optimizer):
         R = self.get_parameter('R')
 
         # For each individual
-        for r in tqdm.tqdm(range(R)):
+        for r in range(R):
+
             # Individual : a list of parameter values
             individual = dict()
 
@@ -89,7 +90,7 @@ class RandomOptimizer(Optimizer):
         fitness_values = np.zeros(R)
 
         # Test each member of the population
-        for r, param_individual in enumerate(parameter_population):
+        for r, param_individual in enumerate(tqdm.tqdm(parameter_population)):
             # Test the model
             _, fitness_value = test_function(
                 param_individual,
