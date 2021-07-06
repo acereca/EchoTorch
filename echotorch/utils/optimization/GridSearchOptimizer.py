@@ -21,6 +21,7 @@
 
 # Imports
 import torch
+import tqdm
 import numpy as np
 import math
 from itertools import product
@@ -110,7 +111,7 @@ class GridSearchOptimizer(Optimizer):
         winner = (None, math.inf)
 
         # Test each member of the population
-        for r, param_individual in enumerate(parameter_population):
+        for r, param_individual in tqdm.tqdm(enumerate(parameter_population)):
             # Test the model
             _, fitness_value = test_function(param_individual, datasets, **kwargs)
 

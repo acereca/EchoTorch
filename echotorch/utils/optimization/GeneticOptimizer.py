@@ -21,6 +21,7 @@
 
 # Imports
 import random
+import tqdm
 import math
 from .Optimizer import Optimizer
 from .OptimizerFactory import optimizer_factory
@@ -216,7 +217,7 @@ class GeneticOptimizer(Optimizer):
         # end if
 
         # For each iteration
-        for epoch in range(iterations):
+        for epoch in tqdm.tqdm(range(iterations)):
             # Test each member of the population
             fitness_values = self._evaluate_with_workers(
                 test_function,
