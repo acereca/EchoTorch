@@ -223,6 +223,7 @@ class ESNCell(Node, Observable):
                 ut = self._pre_step_update_hook(ut, self._forward_calls, b, t)
 
                 # Compute input layer
+                #print(ut, self.w_in)
                 u_win = self._input_layer(ut)
 
                 # Apply W to x

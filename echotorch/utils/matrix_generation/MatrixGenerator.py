@@ -104,6 +104,8 @@ class MatrixGenerator(object):
         # Call matrix generation function
         w = self._generate_matrix(size, dtype)
 
+        #print(f"{size=}, {w=}")
+
         # Scale
         w *= self.get_parameter('scale')
 

@@ -71,6 +71,7 @@ class StackedESN(nn.Module):
         # Properties
         self.n_layers = len(hidden_dim)
         self.esn_layers = list()
+        self._dtype = torch.float32
 
         # Number of features
         self.n_features = 0
@@ -90,7 +91,7 @@ class StackedESN(nn.Module):
             layer_input_scaling = input_scaling[n] if type(input_scaling) is list or type(input_scaling) is np.ndarray else input_scaling
 
 
-            layer_w, layer_w_in, layer_w_bias = self._generate_matrices(w_generator, w_in_generator, w_bias_generator)
+            layer_w, layer_w_in, layer_w_bias = self._generate_matrices(w_generator, w_in_generator, w_bias_generator, int(hidden_dim[n]), layer_input_dim)
 
             # Parameters
             layer_sparsity = sparsity[n] if type(sparsity) is list or type(sparsity) is np.ndarray else sparsity
@@ -166,6 +167,7 @@ class StackedESN(nn.Module):
         Input matrix
         :return:
         """
+        #print("win property")
         # W in
         win_mtx = list()
 
@@ -218,7 +220,7 @@ class StackedESN(nn.Module):
         for index, esn_cell in enumerate(self.esn_layers):
             layer_dim = esn_cell.output_dim
             if index == 0:
-                print(u,u.shape)
+                #print(u,u.shape)
                 last_hidden_states = esn_cell(u)
             else:
                 last_hidden_states = esn_cell(last_hidden_states)
@@ -286,7 +288,7 @@ class StackedESN(nn.Module):
         return ws
     # end for
 
-    def _generate_matrices(self, w_generator, win_generator, wbias_generator):
+    def _generate_matrices(self, w_generator, win_generator, wbias_generator, layer_hidden_dim, layer_input_dim):
         """
         Generate matrices
         :param w_generator: W matrix generator
@@ -294,31 +296,35 @@ class StackedESN(nn.Module):
         :param wbias_generator: Wbias matrix generator
         :return: W, Win, Wbias
         """
+        #print(type(layer_input_dim), type(layer_hidden_dim))
         # Generate W matrix
-        if isinstance(w_generator, mg.MatrixGenerator):
-            w = w_generator.generate(size=(self._hidden_dim, self._hidden_dim), dtype=self._dtype)
-        elif callable(w_generator):
-            w = w_generator(size=(self._hidden_dim, self._hidden_dim), dtype=self._dtype)
-        else:
-            w = w_generator
+        #if isinstance(w_generator, mg.MatrixGenerator):
+        w = w_generator.generate(size=(layer_hidden_dim, layer_hidden_dim), dtype=self._dtype)
+        #elif callable(w_generator):
+        #    w = w_generator(size=(layer_hidden_dim, layer_hidden_dim), dtype=self._dtype)
+        #else:
+        #    w = w_generator
         # end if
 
         # Generate Win matrix
-        if isinstance(win_generator, mg.MatrixGenerator):
-            w_in = win_generator.generate(size=(self._hidden_dim, self._input_dim), dtype=self._dtype)
-        elif callable(win_generator):
-            w_in = win_generator(size=(self._hidden_dim, self._input_dim), dtype=self._dtype)
-        else:
-            w_in = win_generator
+        #print(type(layer_input_dim), type(layer_hidden_dim))
+        #if isinstance(win_generator, mg.MatrixGenerator):
+        w_in = win_generator.generate(size=(layer_hidden_dim, layer_input_dim), dtype=self._dtype)
+        #elif callable(win_generator):
+        #    w_in = win_generator(size=(layer_hidden_dim, layer_input_dim), dtype=self._dtype)
+        #else:
+        #    w_in = win_generator
+
+        #print(w_in)
         # end if
 
         # Generate Wbias matrix
-        if isinstance(wbias_generator, mg.MatrixGenerator):
-            w_bias = wbias_generator.generate(size=self._hidden_dim, dtype=self._dtype)
-        elif callable(wbias_generator):
-            w_bias = wbias_generator(size=self._hidden_dim, dtype=self._dtype)
-        else:
-            w_bias = wbias_generator
+        #if isinstance(wbias_generator, mg.MatrixGenerator):
+        w_bias = wbias_generator.generate(size=layer_hidden_dim, dtype=self._dtype)
+        #elif callable(wbias_generator):
+        #    w_bias = wbias_generator(size=layer_hidden_dim, dtype=self._dtype)
+        #else:
+        #    w_bias = wbias_generator
         # end if
 
         return w, w_in, w_bias
