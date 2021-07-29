@@ -33,6 +33,7 @@ from .LiESNCell import LiESNCell
 from ..linear.RRCell import RRCell
 from .ESNCell import ESNCell
 import numpy as np
+import echotorch.utils.matrix_generation as mg
 
 
 # Stacked Echo State Network module
@@ -43,7 +44,7 @@ class StackedESN(nn.Module):
 
     # Constructor
     def __init__(self, input_dim, hidden_dim, output_dim, leaky_rate=1.0, spectral_radius=0.9, bias_scaling=0,
-                 input_scaling=1.0, w=None, w_in=None, w_bias=None, sparsity=None, input_set=(1.0, -1.0),
+                 input_scaling=1.0, w_generator=None, w_in_generator=None, w_bias_generator=None, sparsity=None, input_set=(1.0, -1.0),
                  w_sparsity=None, nonlin_func=torch.tanh, learning_algo='inv', ridge_param=0.0, with_bias=True):
         """
         Constructor
@@ -88,32 +89,8 @@ class StackedESN(nn.Module):
             layer_bias_scaling = bias_scaling[n] if type(bias_scaling) is list or type(bias_scaling) is np.ndarray else bias_scaling
             layer_input_scaling = input_scaling[n] if type(input_scaling) is list or type(input_scaling) is np.ndarray else input_scaling
 
-            # W
-            if type(w) is torch.Tensor and w.dim() == 3:
-                layer_w = w[n]
-            elif type(w) is torch.Tensor:
-                layer_w = w
-            else:
-                layer_w = None
-            # end if
 
-            # W in
-            if type(w_in) is torch.Tensor and w_in.dim() == 3:
-                layer_w_in = w_in[n]
-            elif type(w_in) is torch.Tensor:
-                layer_w_in = w_in
-            else:
-                layer_w_in = None
-            # end if
-
-            # W bias
-            if type(w_bias) is torch.Tensor and w_bias.dim() == 2:
-                layer_w_bias = w_bias[n]
-            elif type(w_bias) is torch.Tensor:
-                layer_w_bias = w_bias
-            else:
-                layer_w_bias = None
-            # end if
+            layer_w, layer_w_in, layer_w_bias = self._generate_matrices(w_generator, w_in_generator, w_bias_generator)
 
             # Parameters
             layer_sparsity = sparsity[n] if type(sparsity) is list or type(sparsity) is np.ndarray else sparsity
@@ -122,10 +99,19 @@ class StackedESN(nn.Module):
             layer_nonlin_func = nonlin_func[n] if type(nonlin_func) is list or type(nonlin_func) is np.ndarray else nonlin_func
 
             # Create LiESN cell
+            #self.esn_layers.append(LiESNCell(
+             #   layer_leaky_rate, layer_input_dim, hidden_dim[n], layer_input_scaling, layer_w, layer_w_in, layer_w_bias, None, layer_sparsity, layer_input_set,
+              #  layer_w_sparsity, layer_nonlin_func
+            #))
+
             self.esn_layers.append(LiESNCell(
-                layer_leaky_rate, False, layer_input_dim, hidden_dim[n], layer_spectral_radius, layer_bias_scaling,
-                layer_input_scaling, layer_w, layer_w_in, layer_w_bias, None, layer_sparsity, layer_input_set,
-                layer_w_sparsity, layer_nonlin_func
+                leaky_rate=layer_leaky_rate, 
+                input_dim=layer_input_dim,
+                output_dim=hidden_dim[n],
+                w = layer_w,
+                w_in = layer_w_in,
+                w_bias=layer_w_bias,
+                nonlin_func=layer_nonlin_func,
             ))
         # end for
 
@@ -232,6 +218,7 @@ class StackedESN(nn.Module):
         for index, esn_cell in enumerate(self.esn_layers):
             layer_dim = esn_cell.output_dim
             if index == 0:
+                print(u,u.shape)
                 last_hidden_states = esn_cell(u)
             else:
                 last_hidden_states = esn_cell(last_hidden_states)
@@ -298,5 +285,42 @@ class StackedESN(nn.Module):
         # end for
         return ws
     # end for
+
+    def _generate_matrices(self, w_generator, win_generator, wbias_generator):
+        """
+        Generate matrices
+        :param w_generator: W matrix generator
+        :param win_generator: Win matrix generator
+        :param wbias_generator: Wbias matrix generator
+        :return: W, Win, Wbias
+        """
+        # Generate W matrix
+        if isinstance(w_generator, mg.MatrixGenerator):
+            w = w_generator.generate(size=(self._hidden_dim, self._hidden_dim), dtype=self._dtype)
+        elif callable(w_generator):
+            w = w_generator(size=(self._hidden_dim, self._hidden_dim), dtype=self._dtype)
+        else:
+            w = w_generator
+        # end if
+
+        # Generate Win matrix
+        if isinstance(win_generator, mg.MatrixGenerator):
+            w_in = win_generator.generate(size=(self._hidden_dim, self._input_dim), dtype=self._dtype)
+        elif callable(win_generator):
+            w_in = win_generator(size=(self._hidden_dim, self._input_dim), dtype=self._dtype)
+        else:
+            w_in = win_generator
+        # end if
+
+        # Generate Wbias matrix
+        if isinstance(wbias_generator, mg.MatrixGenerator):
+            w_bias = wbias_generator.generate(size=self._hidden_dim, dtype=self._dtype)
+        elif callable(wbias_generator):
+            w_bias = wbias_generator(size=self._hidden_dim, dtype=self._dtype)
+        else:
+            w_bias = wbias_generator
+        # end if
+
+        return w, w_in, w_bias
 
 # end ESNCell
